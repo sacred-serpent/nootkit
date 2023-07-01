@@ -1,0 +1,26 @@
+{
+    "files.associations": {
+        "init.h": "c",
+        "module.h": "c",
+        "kernel.h": "c",
+        "sysinfo.h": "c",
+        "elf.h": "c",
+        "mm_types.h": "c",
+        "fs.h": "c",
+        "list.h": "c",
+        "list_lru.h": "c",
+        "percpu-rwsem.h": "c",
+        "rcu_sync.h": "c",
+        "wait.h": "c",
+        "rcuwait.h": "c",
+        "signal.h": "c",
+        "sched.h": "c",
+        "task.h": "c",
+        "refcount.h": "c",
+        "jobctl.h": "c",
+        "current.h": "c",
+        "shm.h": "c",
+        "hugetlb_encode.h": "c",
+        "unistd.h": "c"
+    }
+}
