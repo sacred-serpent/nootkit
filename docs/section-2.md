@@ -135,6 +135,9 @@ the type of function which would be easy to hook into for our cause. But alas, i
 location we'll have to jump through some hoops using `kallsyms` (as that is a way I know to get symbol addresses
 for static symbols).
 
+`filldir64` also isn't used anywhere outside of serving the `getdents64` syscall, so we won't be changing anything
+else if we only hide files from this specific function.
+
 ## Setting Function Hooks (x86_64)
 
 Our method will be simple - we'll just replace the first bytes of a function address with a `jmp` to the absolute
@@ -157,4 +160,80 @@ Assembles to:
 
 Where we have to replace indexes `2` to `9` (inclusive) with out little-endian 64 bit hook address.
 
-# UNFINISHED
+Check out [src/arch/x86_64/hook.c](../src/arch/x86_64/hook.c) to see how it's done.
+
+### Overwriting The Original Function
+
+There's a little thing called *Write Protection* preventing us from going willy nilly around executable
+kernel addresses.
+
+We could disable it for the specific pages we want to write to and then restore write protection for them
+when we're done with the hook placement; or we could go the even simpler route and just disable/enable WP
+as a CPU feature alltogether. On x86_64, this can be done by writing to the register `cr0` and setting a certain bit.
+
+Check out [src/arch/x86_64/mm.c](../src/arch/x86_64/mm.c) to see my implementation.
+
+## Finding Unexported Kernel Functions
+
+If we want to hook `filldir64`, we'll have to find where it is first.
+
+As said before, `/proc/kallsyms` has that ability - we could simply pass all required symbol addresses from usermode
+at module load time, and go to town.
+But that complicates load-time logic quite a bit, and I'd rather keep it simple where I can - we'll can get by with
+the address of the unexported symbol `kallsyms_lookup_name`, and use it within the module to find the rest of the
+needed unexported symbols.
+
+See [src/ksyms.c](../src/ksyms.c) and [src/ksyms.h](../src/ksyms.h) for the implementation.
+
+## Passing Arguments From Usermode
+
+So we need to resolve a symbol in usermode using `/proc/kallsyms` at load time. How do we pass it to the kernel?
+
+Luckily there's this feature called *Module Parameters*, which allows setting parameters for modules at load time
+*through the command line*, and even updating them at run time!
+
+See [src/nootkit_main.c](../src/nootkit_main.c).
+
+This means we can load our module like so:
+
+```sh
+insmod /nootkit.ko \
+kallsyms_lookup_name=0x$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1)
+```
+
+And get a fresh context to jumpstart off of.
+
+## Actually Hiding Files
+
+Since by placing a hook on the original `filldir64` we are essentially blocking ourselves from it's functionality,
+we have to find some other way to get back to the *"intended flow"* after performing our hook logic at the beginning
+of the function.
+
+Luckily, I have the kernel source for just our used version (don't ask me where I got it), and we can copy, splice, dice,
+and resolve away unexported symbols to replicate `filldir64`'s behaviour *in exactitude*, while introducing our hook code
+gracefully.
+
+See [src/hide/readdir.c](../src/hide/readdir.c) for the implementation.
+
+This method is *highly* unresistant to kernel version changes, and a better hook logic which allows to return to the
+original function flow will be preferred in the future. However, we can get by with this for now without getting too
+complicated.
+
+### The Pitfalls of Man, and `filldir64`
+
+I am young, and therefore somewhat stupid; the `name` argument to `filldir64` contains only the bare filename,
+and *not* the full path to it. We do get an inode number though, which can be used just as well as a path
+(actually better in a way) to hide a specific file. Two files which are hardlinks to the same one will share an inode number,
+but will differ paths - hiding the inode number will hide both files (for better or worse).
+
+Instructions didn't specify hiding the file by path it's full path, so I don't feel like there's a need to also
+write hook logic for the `getdents64` syscall function itself, which does grant access to the full path (in a way).
+
+Here is a 4-liner for loading the module with filename and inode hide parameters:
+
+```sh
+insmod /nootkit.ko \
+kallsyms_lookup_name=0x$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
+hide_filenames=hello,q \
+hide_inodes=138210,17635
+```
