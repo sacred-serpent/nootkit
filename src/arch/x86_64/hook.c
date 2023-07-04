@@ -13,23 +13,28 @@
 */
 static u8 jmp_gadget[12] = { 0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xE0 };
 
-u8 hook_last_replaced[sizeof(jmp_gadget)] = {0};
-size_t hook_last_replaced_sz = sizeof(hook_last_replaced);
+static u8 last_replaced[sizeof(jmp_gadget)] = {0};
 
-void hook_set(void *addr, void *hook) {
+struct view hook_set(void *addr, void *hook) {
+    struct view restore;
+
     // patch hook address into the jmp gadget
     *(void **)&jmp_gadget[2] = hook;
     
     // save copy of starting bytes at addr
-    memcpy(hook_last_replaced, addr, sizeof(jmp_gadget));
+    memcpy(last_replaced, addr, sizeof(last_replaced));
 
     disable_write_protect();
     memcpy(addr, jmp_gadget, sizeof(jmp_gadget));
     enable_write_protect();
+
+    restore.ptr = last_replaced;
+    restore.size = sizeof(last_replaced);
+    return restore;
 }
 
-void hook_unset(void *addr, u8 *restore, size_t restore_sz) {
+void hook_unset(void *addr, struct view restore) {
     disable_write_protect();
-    memcpy(addr, restore, restore_sz);
+    memcpy(addr, restore.ptr, restore.size);
     enable_write_protect();
 }
