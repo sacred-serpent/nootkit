@@ -8,7 +8,7 @@
 #include "ksyms.h"
 #include "config.h"
 #include "common.h"
-#include "arch/hook.h"
+#include "hook.h"
 
 #define unsafe_copy_dirent_name(_dst, _src, _len, label) do {	\
 	char __user *dst = (_dst);									\

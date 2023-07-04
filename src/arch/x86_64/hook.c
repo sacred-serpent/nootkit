@@ -4,8 +4,8 @@
 
 #include "license.h"
 #include "common.h"
-#include "arch/hook.h"
-#include "arch/mm.h"
+#include "hook.h"
+#include "mm.h"
 
 /* Assembly of:
     movabs rax, 0  ; a correct hook address should be patched in
