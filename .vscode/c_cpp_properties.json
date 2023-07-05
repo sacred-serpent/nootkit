@@ -1,38 +1,30 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "linux-5.15.0-76-module",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include/generated",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include/uapi",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include/generated/uapi",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/uapi",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/generated/uapi",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64"
-        },
-        {
-            "name": "nootkit-5.15",
-            "includePath": [
-                "/home/amit/Projects/nootkit/kernel-headers/linux-headers-5.15.0-76-generic/include/**",
-                "/home/amit/Projects/nootkit/**"
+            "defines": [
+                "__KERNEL__",
+                "MODULE",
+                "__GNUC__=1"
             ],
-            "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
-            "compilerPathInCppPropertiesJson": "/usr/bin/gcc",
-            "mergeConfigurations": false,
-            "browse": {
-                "path": [
-                    "${workspaceFolder}/**"
-                ],
-                "limitSymbolsToIncludedHeaders": true
-            },
             "compilerArgs": [
                 "-nostdinc",
-                "-nostdlib"
+                "-include ${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/kconfig.h",
+                "-include ${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/compiler_types.h"
             ]
         }
     ],

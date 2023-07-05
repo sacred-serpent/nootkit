@@ -21,6 +21,21 @@
         "current.h": "c",
         "shm.h": "c",
         "hugetlb_encode.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "hooks.h": "c",
+        "string.h": "c",
+        "types.h": "c",
+        "posix_types.h": "c",
+        "stddef.h": "c",
+        "compiler_types.h": "c",
+        "compiler-gcc.h": "c",
+        "mm.h": "c",
+        "moduleparam.h": "c",
+        "kallsyms.h": "c",
+        "ksyms.h": "c",
+        "hook.h": "c",
+        "const.h": "c",
+        "license.h": "c",
+        "errno.h": "c"
     }
 }
