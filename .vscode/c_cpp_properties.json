@@ -15,16 +15,20 @@
             "defines": [
                 "__KERNEL__",
                 "MODULE",
-                "__GNUC__=1"
+                "__GNUC__"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
             "compilerArgs": [
-                "-nostdinc",
-                "-include ${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/kconfig.h",
-                "-include ${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/compiler_types.h"
+                "-nostdinc", "-nostdlib"
+            ],
+            "forcedInclude": [
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/compiler_types.h",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/kconfig.h",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/types.h",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/stddef.h"
             ]
         }
     ],
