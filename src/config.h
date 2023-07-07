@@ -1,20 +1,24 @@
 #pragma once
 
+#include <linux/types.h>
+
 #define MAX_HIDE_ENTITIES 255
 
 enum connection_proto {
-    SESSION_TCP = 1,
-    SESSION_UDP = 2
+    NOOTKIT_TCP = 1,
+    NOOTKIT_UDP = 2
 };
 
 struct config_connection {
     enum connection_proto proto;
-    u32 local_ip;
-    u32 local_ip_mask;
-    u32 foreign_ip;
-    u32 foreign_ip_mask;
-    u16 local_port;
-    u16 foreign_port;
+    __be32 local_ip;
+    __be32 local_ip_mask;
+    __be32 foreign_ip;
+    __be32 foreign_ip_mask;
+    __le32 local_port_start;
+    __le32 local_port_end;
+    __le32 foreign_port_start;
+    __le32 foreign_port_end;
 };
 
 /// @brief Parse a connection description string (e.g. entered as a module parameter)

