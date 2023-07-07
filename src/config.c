@@ -7,7 +7,8 @@
 
 struct config_connection hide_sockets[MAX_HIDE_ENTITIES] = {0};
 
-int config_parse_connection(char *cs, struct config_connection *res) {
+int config_parse_connection(char *cs, struct config_connection *res)
+{
     int local_ip_a = 0, local_ip_b = 0, local_ip_c = 0, local_ip_d = 0;
     int local_mask_a = 0, local_mask_b = 0, local_mask_c = 0, local_mask_d = 0;
     int foreign_ip_a = 0, foreign_ip_b = 0, foreign_ip_c = 0, foreign_ip_d = 0;
@@ -50,7 +51,8 @@ int config_parse_connection(char *cs, struct config_connection *res) {
     return 0;
 }
 
-int config_parse_globals(void) {
+int config_parse_globals(void)
+{
     int i, ret;
 
     for (i = 0; i < hide_sockets_count; i++) {

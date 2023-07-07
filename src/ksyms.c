@@ -23,7 +23,8 @@ KSYMS_GLOBALS();
 #undef KSYM_GLOBAL
 
 
-int resolve_ksyms(void *kallsyms_lookup_name) {
+int resolve_ksyms(void *kallsyms_lookup_name)
+{
     ksyms__kallsyms_lookup_name = kallsyms_lookup_name;
 
     /**
