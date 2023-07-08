@@ -4,13 +4,13 @@
             "name": "linux-5.15.0-76-module",
             "includePath": [
                 "${workspaceFolder}/src",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include",
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include",
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include/generated",
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include/uapi",
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include/generated/uapi",
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/uapi",
-                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/generated/uapi",
-                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include"
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/generated/uapi"
             ],
             "defines": [
                 "__KERNEL__",
@@ -28,7 +28,8 @@
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/compiler_types.h",
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/kconfig.h",
                 "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/types.h",
-                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/stddef.h"
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/include/linux/stddef.h",
+                "${workspaceFolder}/kernel-headers/linux-headers-5.15.0-76-generic/arch/x86/include/generated/uapi/asm/types.h"
             ]
         }
     ],
