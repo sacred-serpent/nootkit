@@ -1,1 +1,9 @@
 kernel-headers/*
+
+# Compilation Litter
+*.o
+*.cmd
+Module.symvers
+*.ko
+*.mod*
+modules.order

