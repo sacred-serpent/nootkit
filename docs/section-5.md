@@ -209,7 +209,7 @@ but I'll leave that as a TODO for now.
 
 ## Implementation
 
-For the end implementation see [src/hide/net.c](../src/hide/net.c).
+For the end implementation see [src/hide/net_rx.c](../src/hide/net_rx.c).
 
 I reused and updated the existing connection configuration mechanism to include all sorts of stuff we can filter packets by -
 here for example is how we can filter out all ARP packets, in addition to packets directed to TCP destination ports 1300-1350:

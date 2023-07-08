@@ -43,28 +43,41 @@ Possible module arguments are:
 - `kallsyms_lookup_name`: Must be present, can be obtained via `/proc/kallsyms` as shown above
 - `hide_filenames`: Comma-separated list of file names and absolute paths to hide from usermode dir listings
 - `hide_inodes`: Comma-separated list of inode numbers to hide from usermode dir listings
-- `hide_sockets`: Comma-separated list of connection description strings following the connection format (explained
-  [below](#connection-config-format)) - IPv4 socket matching this filter will be hidden from `netstat` commands.
+- `hide_sockets`: Comma-separated list of socket filter strings following the format (explained
+  [below](#socket-filter-format)) - IPv4 socket matching this filter will be hidden from `netstat` commands.
+- `hide_packets`: Comma-separated list of packet filter strings following the format (explained [below](#packet-filter-format))
 
 You are also welcome to check out the [makefile](Makefile) for some semi-automatic tests.
 
-#### Connection Config Format
+#### Socket Filter Format
 
 Pretty simple really, just follow this template:
 
 ```txt
-PROTO = 1; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535;
+IP PROTO = 6; LOCAL = 0.0.0.0/0.0.0.0:1300-1400; FOREIGN = 0.0.0.0/0.0.0.0:0-65535;
 ```
 
-Where `PROTO` can be:
-
-- `1`: TCP
-
-(That's it for now)
+Where `PROTO` is a valid IP protocol number, although only TCP sockets are supported.
+`PROTO` 0 is magic and matches any protocol number.
 
 `LOCAL` describes the local IP/Mask:PortRangeStart-PortRangeEnd, and `FOREIGN` does the same for... The foreign address.
 
 Port ranges are *inclusive*. Spaces aren't mandatory anywhere.
+
+#### Packet Filter Format
+
+A lot like the socket filter format above (even represented the same in memory!), but a little more detailed:
+
+```txt
+ETH PROTO = 0; ETH SRC = 00:00:00:00:00:00; ETH DST = 00:00:00:00:00:00; IP PROTO = 6; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:1300-1350;
+
+# Or ARP for example
+
+ETH PROTO = 0806; ETH SRC = 00:00:00:00:00:00; ETH DST = 00:00:00:00:00:00; IP PROTO = 0; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:0-65535;
+```
+
+Again the `PROTO`s are each valid protocol numbers for their respective protocol, and 0 is magic and matches all protocols.
+Note that `ETH PROTO` parses input as *hexadecimal*.
 
 ## Features
 
@@ -111,9 +124,10 @@ kallsyms_lookup_name=0x$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | 
 hide_filenames=/proc/7047,/proc/682
 ```
 
-### Hiding TCP Sockets
+### Hiding TCP Sockets From Various Utilities
 
-Sockets can be hidden by specifying their properties in the connection format shown [above](#connection-config-format).
+Sockets can be hidden from `netstat` and other utilities by specifying their properties in the socket filter format
+shown [above](#socket-filter-format).
 
 Example:
 
@@ -123,4 +137,23 @@ Example:
 insmod /nootkit.ko \
 kallsyms_lookup_name=0x$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
 "hide_sockets=\"PROTO = 1; LOCAL = 192.168.122.122/255.255.255.255:10-30; FOREIGN = 0.0.0.0/0.0.0.0:0-65535;\""
+```
+
+### Hiding Packets
+
+Packets can be hidden at a very low level - neither `AF_PACKET` sockets or even XDP BPF running in the generic
+context will see them.
+Packets can be hidden by specifying their properties in the packet filter format shown [above](#packet-filter-format).
+
+Example:
+
+#### Hide all TCP packets directed to port 1337, and all ARP packets in general
+
+```sh
+insmod /nootkit.ko \
+kallsyms_lookup_name=0x$(cat /proc/kallsyms | grep "\bkallsyms_lookup_name\b" | cut -d " " -f 1) \
+"hide_packets=\" \
+ETH PROTO = 0; ETH SRC = 00:00:00:00:00:00; ETH DST = 00:00:00:00:00:00; IP PROTO = 6; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:1337-1337;, \
+ETH PROTO = 0806; ETH SRC = 00:00:00:00:00:00; ETHDST = 00:00:00:00:00:00; IPPROTO = 0; IP SRC = 0.0.0.0/0.0.0.0:0-65535; IP DST = 0.0.0.0/0.0.0.0:0-65535; \
+\""
 ```
