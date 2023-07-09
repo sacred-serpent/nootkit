@@ -36,7 +36,7 @@ int resolve_ksyms(void *kallsyms_lookup_name)
         ksyms__##symbol = (void *)ksyms__kallsyms_lookup_name(#symbol);                 \
         if (ksyms__##symbol == NULL) {                                                  \
             printk(KERN_ERR "nootkit: ksyms: Symbol %s failed to resolve", #symbol);    \
-            return 1;                                                                   \
+            return -1;                                                                  \
         }                                                                               \
     } while (0)
     KSYMS_FUNCTIONS();

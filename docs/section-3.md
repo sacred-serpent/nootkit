@@ -153,7 +153,7 @@ void *tcp_seq_next_hook(struct seq_file *seq, void *v, loff_t *pos)
             st->state = TCP_SEQ_STATE_ESTABLISHED;
             st->bucket = 0;
             st->offset = 0;
-            rc	  = ksyms__established_get_first(seq);
+            rc = ksyms__established_get_first(seq);
         }
         break;
     case TCP_SEQ_STATE_ESTABLISHED:

