@@ -85,6 +85,8 @@ void *hook_x64_syscall_tbl(unsigned int syscall, void *hook)
 {
     void *original = ksyms__sys_call_table[syscall];
 
+    printk(KERN_INFO "Set %d to %lx", syscall, (unsigned long)hook);
+
     disable_write_protect();
     ksyms__sys_call_table[syscall] = hook;
     enable_write_protect();
@@ -95,7 +97,7 @@ void *hook_x64_syscall_tbl(unsigned int syscall, void *hook)
 void hook_x64_syscall_set_store(int syscall, void *hook, void **original)
 {
     // only set hook if previously unset
-    if (*original)
+    if (*original != NULL)
         return;
     
     *original = hook_x64_syscall_tbl(syscall, hook);
@@ -104,7 +106,7 @@ void hook_x64_syscall_set_store(int syscall, void *hook, void **original)
 void hook_x64_syscall_unset_restore(int syscall, void **original)
 {
     // only unset if previously set
-    if (!original)
+    if (*original == NULL)
         return;
     
     hook_x64_syscall_tbl(syscall, *original);

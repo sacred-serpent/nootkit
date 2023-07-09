@@ -65,13 +65,13 @@ long (*hook_original__x64_sys_##target_name)(const struct pt_regs *regs) = NULL;
 void module##_hook_enable_##target_name(void)                                       \
 {                                                                                   \
     hook_x64_syscall_set_store(syscall, (void*)hook,                                \
-        (void *)&hook_original__x64_sys_##target_name);                             \
+        (void **)&hook_original__x64_sys_##target_name);                            \
 }                                                                                   \
                                                                                     \
 void module##_hook_disable_##target_name(void)                                      \
 {                                                                                   \
     hook_x64_syscall_unset_restore(syscall,                                         \
-        (void *)&hook_original__x64_sys_##target_name);                             \
+        (void **)&hook_original__x64_sys_##target_name);                            \
 }
 
 #define HOOK_X64_SYSCALL_EXTERN(module, target_name)                                \

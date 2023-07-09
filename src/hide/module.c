@@ -4,7 +4,7 @@
 #include <hide.h>
 #include <hook.h>
 
-static struct list_head *this_module_prev;
+static struct list_head *this_module_prev = NULL;
 
 void hide_enable_thismodule(void)
 {
