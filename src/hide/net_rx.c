@@ -124,4 +124,4 @@ static void netif_receive_skb_list_internal_hook(struct list_head *head)
     rcu_read_unlock();
 }
 
-HOOK_DEFINE(hide, netif_receive_skb_list_internal, ksyms__netif_receive_skb_list_internal, &netif_receive_skb_list_internal_hook);
+HOOK_DEFINE(hide, netif_receive_skb_list, ksyms__netif_receive_skb_list_internal, &netif_receive_skb_list_internal_hook);

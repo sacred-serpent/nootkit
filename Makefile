@@ -20,6 +20,8 @@ clean:
 test-remove:
 	-sshpass -pa ssh root@${TEST_IP} "rmmod nootkit"
 	-sshpass -pa ssh root@${TEST_IP} "rm /nootkit.ko"
+	# rmmod a second time
+	-sshpass -pa ssh root@${TEST_IP} "rm /nootkit.ko"
 
 test-upload: build
 	sshpass -pa scp nootkit.ko root@${TEST_IP}:/
