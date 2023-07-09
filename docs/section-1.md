@@ -65,7 +65,8 @@ In truth this puts a pointer to our symbol in a the ".init" section of the resul
 
 ## 1.c. Listing, Loading, and Unloading Modules
 
-Listing modules can be done with `lsmod`, which gets it's info from sysfs' `/sys/module` directory.
+Listing modules can be done with `lsmod`, which gets it's info from sysfs' `/sys/module` directory and from procfs
+in `/proc/modules`.
 
 Loading modules can be done either with `modprobe` or `insmod` - `modprobe` being the preferred method for users
 as it can also look up and load module dependencies, where `insmod` is just a small wrapper to access

