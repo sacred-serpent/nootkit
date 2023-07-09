@@ -205,7 +205,8 @@ grep ffffffffa61aace0 /proc/kallsyms
 ```
 
 Cool! So we won't have to imitate both ABIs through a single function however that might work,
-but we do have to receive a `struct pt_regs` as the argument.
+but we do have to receive a `struct pt_regs` as the argument. I'll focus only on the x64 ABI,
+as that is what's used by my testing machine's (and most other distros') usermode utilities.
 
 ## Syscall Hooking Implementation
 
@@ -240,3 +241,9 @@ Hijacking the 217 entry in the syscall table and putting in it the address of `_
 numbers being printed, which I think is really cool!
 
 After some algorithmic work and framework updates, a hook was born. See the implementation at [src/hide/readdir.c](../src/hide/readdir.c).
+
+## What About The Past
+
+Back in [section 2](section-2.md) we implemented a filter for filenames and inode numbers, which acts as a logic
+hook for `getdents64`. We *could* perform the same filtering logic here, and it would be in a way better,
+because 1 hook is easier to maintain than 2; however we have more work before us, so I'll leave it at that.

