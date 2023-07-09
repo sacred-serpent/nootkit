@@ -85,8 +85,6 @@ void *hook_x64_syscall_tbl(unsigned int syscall, void *hook)
 {
     void *original = ksyms__sys_call_table[syscall];
 
-    printk(KERN_INFO "Set %d to %lx", syscall, (unsigned long)hook);
-
     disable_write_protect();
     ksyms__sys_call_table[syscall] = hook;
     enable_write_protect();
