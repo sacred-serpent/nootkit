@@ -160,6 +160,9 @@ Assembles to:
 
 Where we have to replace indexes `2` to `9` (inclusive) with out little-endian 64 bit hook address.
 
+`rax` is safe to clobber in this way at the entry point of functions - as it's not used as a parameter register
+in any used calling convention, and is caller saved.
+
 Check out [src/arch/x86_64/hook.c](../src/arch/x86_64/hook.c) to see how it's done.
 
 ### Overwriting The Original Function

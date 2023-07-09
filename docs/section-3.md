@@ -131,6 +131,9 @@ So now remains just constructing the hook logic to implement within the function
 
 ## Hooking `tcp_seq_next` (And `seq_file.op.next` Methods In General)
 
+It's important to mention that `tcp_seq_next` is a good target because it has no use outside of `fops` for
+`/proc/net/tcp` and `/proc/net/tcp6`.
+
 No need to get sleezy, we can do something cheezy like this:
 
 ```C

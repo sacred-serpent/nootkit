@@ -8,6 +8,8 @@ I want to thank the folks at Google, and God, for helping me find it.
 The doc describes kernel version 3.13.0, however I'm assuming nothing much that is essential to the described structure
 has changed.
 
+(Boy, that assumption sure did prove itself [wrong](https://lwn.net/Articles/763056/))
+
 ## Packet RX Hook Location
 
 Our goal here is to find a place where we can:
