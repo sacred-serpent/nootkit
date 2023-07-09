@@ -60,13 +60,13 @@ static inline bool filter_transport(struct config_netfilter *filter,
 ///     to a config_netfilter struct.
 /// @param cs Packet filter description string.
 /// @param res Pointer to a config_netfilter struct to fill with data.
-/// @return 0 on success, non-zero on error.
+/// @return 0 on success, or the amount of field matches on error.
 int config_parse_packet_filter(char *cs, struct config_netfilter *res);
 
 /// @brief Parse a socket filter string to a config_netfilter struct.
 /// @param cs Packet filter description string.
 /// @param res Pointer to a config_netfilter struct to fill with data.
-/// @return 0 on success, non-zero on error.
+/// @return 0 on success, or the amount of field matches on error.
 int config_parse_socket_filter(char *cs, struct config_netfilter *res);
 
 /// @brief Fill all config globals which require runtime parsing, e.g. hide_sockets
