@@ -179,7 +179,7 @@ Welp turning off GRO didn't help, but was worth a try.
 
 Anyway.
 
-I'm guessing this `_list` thing is just a newer API, and ALLLL the new fancy drivers use it. I am slightly enraged,
+It seems this `_list` thing is just a newer API, and ALLLL the new fancy drivers use it. I am slightly enraged,
 but it brought with it a cathartic experience: The hook compiles and runs.
 
 To drop a packet we can call:
@@ -189,25 +189,11 @@ skb_list_del_init(skb);
 continue;
 ```
 
-From within the `list_for_each_entry_safe(skb, next, head, list)` for loop in `netif_receive_skb_list_internal`.
-I found this out from following calls in the kernel source code until I saw this bit:
+Which is called from other functions within this `skb_list` function group to remove skbs from the list.
 
-```C
-static inline void __netif_receive_skb_list_ptype(struct list_head *head,
-    struct packet_type *pt_prev,
-    struct net_device *orig_dev)
-{
-    // ...
-    list_for_each_entry_safe(skb, next, head, list) {
-        skb_list_del_init(skb);
-        pt_prev->func(skb, skb->dev, pt_prev, orig_dev);
-    }
-    // ...
-}
-```
-
-Which seemed to be rather final in the flow. I can't tell for sure at the moment if we're not causing a memory leak,
-but I'll leave that as a TODO for now.
+Which seemed to be rather final in the flow. [This nice article](https://lwn.net/Articles/715811/) (not documentation exactly
+but anyway) highlighted that the correct way to end the life of an skb and deallocate it is either by `kfree_skb` or `consume_skb`,
+with the latter does not contribute to packet drop statistics - so I chose it.
 
 ## Implementation
 
