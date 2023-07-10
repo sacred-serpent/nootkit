@@ -56,6 +56,7 @@ static void __netif_receive_skb_list(struct list_head *head)
                 continue;
 
             skb_list_del_init(skb);
+            consume_skb(skb);
             goto end;
         }
 
