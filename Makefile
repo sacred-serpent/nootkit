@@ -18,9 +18,9 @@ clean:
 	make -C ${KDIR} M=${PWD} clean
 
 test-remove:
-	-sshpass -pa ssh root@${TEST_IP} "rmmod nootkit"
-	-sshpass -pa ssh root@${TEST_IP} "rm /nootkit.ko"
+	-sshpass -pa ssh root@${TEST_IP} "rmmod -f nootkit"
 	# rmmod a second time
+	-sshpass -pa ssh root@${TEST_IP} "rmmod -f nootkit"
 	-sshpass -pa ssh root@${TEST_IP} "rm /nootkit.ko"
 
 test-upload: build

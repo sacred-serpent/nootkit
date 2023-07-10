@@ -160,9 +160,15 @@ ETH PROTO = 0806; ETH SRC = 00:00:00:00:00:00; ETHDST = 00:00:00:00:00:00; IPPRO
 
 ### Hiding The Module Itself
 
-`nootkit`'s self hiding feature is quite basic at the moment - it only hides from `/proc/modules`, making it
-invisible to `lsmod`. It is still however visible under `/sys/module`.
+`nootkit`'s self hiding feature has two aspects:
 
-To allow removing the module, a hook is installed for the syscall `delete_module`, such that running `rmmod nootkit`
-*once* disables the hiding of the module, and running it again removes the module regularly. See the reason
-for this implementation in [src/arch/x86_64/hide/module_sys.c](src/arch/x86_64/hide/module_sys.c).
+- Hiding from `/proc/modules` and therefore `lsmod`.
+
+- Removing the `/sys/module` directory associated with the module.
+
+To allow removing the module, a hook is installed for the syscall `delete_module`, such that running `rmmod -f nootkit`
+*once* disables the hiding of the module from both locations, and running it again removes the module regularly.
+See the reason for this implementation in [src/arch/x86_64/hide/module_sys.c](src/arch/x86_64/hide/module_sys.c).
+
+The `-f` flag is necessary, since without it `rmmod` checks the directory `/sys/module` for details about the requested
+module to remove, and `nootkit`'s hiding from it prevent's `rmmod` from following up with a `delete_module` syscall.
