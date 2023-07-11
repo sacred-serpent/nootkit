@@ -57,7 +57,7 @@ static void __netif_receive_skb_list(struct list_head *head)
 
             skb_list_del_init(skb);
             consume_skb(skb);
-            goto end;
+            goto skip_skb;
         }
 
         /* hook code end */
@@ -77,12 +77,14 @@ static void __netif_receive_skb_list(struct list_head *head)
             else
                 memalloc_noreclaim_restore(noreclaim_flag);
         }
+
+skip_skb:
+        continue;
     }
     /* Handle the remaining sublist */
     if (!list_empty(head))
         ksyms____netif_receive_skb_list_core(head, pfmemalloc);
 
-end:
     /* Restore pflags */
     if (pfmemalloc)
         memalloc_noreclaim_restore(noreclaim_flag);
