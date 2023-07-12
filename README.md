@@ -172,3 +172,23 @@ See the reason for this implementation in [src/arch/x86_64/hide/module_sys.c](sr
 
 The `-f` flag is necessary, since without it `rmmod` checks the directory `/sys/module` for details about the requested
 module to remove, and `nootkit`'s hiding from it prevent's `rmmod` from following up with a `delete_module` syscall.
+
+## Project Overview
+
+There are 3 core parts to `nootkit`:
+
+- A standard hooking mechanism, exposed in [src/hook.h](src/hook.h) and defined in an architecture specific source
+  file ([src/arch/x86_64/hook.c](src/arch/x86_64/hook.c)).
+  - The main APIs here are `HOOK_DEFINE` and `HOOK_EXTERN`, used to generate and expose functions for enabling and
+    disabling hooks - macros for syscall hook definitions are also in place.
+- A centralized resolution and way of exposing unexported kernel symbols by way of `kallsyms`.
+  Function and global variable signatures are defined once in an X-macro in [src/ksyms.h](src/ksyms.h), and are
+  automatically set to be resolved by the function `resolve_ksyms` ([src/ksyms.c](src/ksyms.c)) called on module
+  initialization.
+- A central configuration method by module parameters; Both raw parameters and in some cases parsed parameter values
+  are available for use by nootkit modules, with some helper functions for performing common operations on configuration
+  values (e.g. `filter_transport` for matching values against a transport-layer network filter). [src/config.h](src/config.h),
+  [src/config.c](src/config.c).
+
+Usermode hiding functionalities are defined in the general [src/hide](src/hide/) directory, or in the architecture
+specific [src/arch/x86_64/hide/](src/arch/x86_64/hide/) directory in relevant cases.
